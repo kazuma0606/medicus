@@ -1,0 +1,10 @@
+packages: .
+
+-- Optimization settings
+optimization: 2
+
+-- Documentation
+documentation: True
+
+-- Test options
+tests: True
