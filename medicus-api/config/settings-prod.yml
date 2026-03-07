@@ -1,0 +1,57 @@
+# Production settings for MEDICUS API
+
+# Server configuration
+port: 8080
+host: "0.0.0.0"
+# approot should be set via environment variable: APPROOT
+
+# Production mode
+development: false
+
+# GraphQL configuration
+graphql:
+  endpoint: "/graphql"
+  playground-enabled: false  # Disable in production
+  max-query-depth: 8
+
+# CORS configuration
+cors:
+  enabled: true
+  origins:
+    # Specify allowed origins (override via environment)
+    - "https://app.example.com"
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+  headers:
+    - Content-Type
+    - Authorization
+
+# Logging configuration
+logging:
+  level: INFO
+  format: JSON
+  destination: stdout
+
+# Rate limiting (enabled in production)
+rate-limit:
+  enabled: true
+  requests-per-minute: 100
+  burst: 20
+
+# Session configuration
+session:
+  timeout-minutes: 60
+
+# Security headers
+security:
+  content-security-policy: "default-src 'self'"
+  frame-options: DENY
+  xss-protection: "1; mode=block"
+  content-type-nosniff: true
+  referrer-policy: "strict-origin-when-cross-origin"
+  
+# SSL/TLS (assuming behind reverse proxy)
+ssl:
+  force-https: true

@@ -1,0 +1,49 @@
+# Development settings for MEDICUS API
+
+# Server configuration
+port: 3000
+host: "localhost"
+approot: "http://localhost:3000"
+
+# Development mode
+development: true
+
+# GraphQL configuration
+graphql:
+  endpoint: "/graphql"
+  playground-enabled: true
+  max-query-depth: 10
+
+# CORS configuration
+cors:
+  enabled: true
+  origins:
+    - "*"
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+  headers:
+    - Content-Type
+    - Authorization
+
+# Logging configuration
+logging:
+  level: DEBUG
+  format: JSON
+  destination: stdout
+
+# Rate limiting (disabled in development)
+rate-limit:
+  enabled: false
+  requests-per-minute: 100
+
+# Session configuration
+session:
+  timeout-minutes: 120
+
+# Security headers
+security:
+  content-security-policy: "default-src 'self'"
+  frame-options: SAMEORIGIN
+  xss-protection: "1; mode=block"

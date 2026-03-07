@@ -21,22 +21,24 @@ Phase 4以降の将来的な拡張機能は [`future-enhancements.md`](./future-
 
 ## Phase 1: Project Setup & Foundation
 
-### Task 1: Project Initialization ⬜
+### Task 1: Project Initialization ✅
 **Priority:** P0  
 **Estimated:** 2-3h  
-**Dependencies:** None
+**Dependencies:** None  
+**Completed:** 2026-03-07
 
-#### 1.1: Create medicus-api package ⬜
-- [ ] `medicus-api.cabal`の作成
-- [ ] ディレクトリ構造の作成（`src/`, `test/`, `config/`, `static/`）
-- [ ] Stack/Cabal設定
-- [ ] `.gitignore`の設定
+#### 1.1: Create medicus-api package ✅
+- [x] `medicus-api.cabal`の作成
+- [x] ディレクトリ構造の作成（`src/`, `test/`, `config/`, `static/`, `app/`）
+- [x] Cabal設定（`cabal.project`, `Setup.hs`）
+- [x] `.gitignore`の設定
+- [x] `README.md`, `LICENSE`, `CHANGELOG.md`の作成
 
-#### 1.2: Add dependencies ⬜
-- [ ] Yesod依存関係追加
-- [ ] Morpheus GraphQL追加
-- [ ] MEDICUS Engine依存関係追加
-- [ ] テストライブラリ追加（hspec, yesod-test）
+#### 1.2: Add dependencies ✅
+- [x] Yesod依存関係追加
+- [x] Morpheus GraphQL追加
+- [x] MEDICUS Engine依存関係追加
+- [x] テストライブラリ追加（hspec, yesod-test）
 
 ```cabal
 build-depends:
@@ -55,16 +57,16 @@ build-depends:
   , yesod-test
 ```
 
-#### 1.3: Setup configuration files ⬜
-- [ ] `config/settings.yml`作成
-- [ ] `config/settings-prod.yml`作成
-- [ ] `config/routes.txt`作成
-- [ ] 環境変数設定
+#### 1.3: Setup configuration files ✅
+- [x] `config/settings.yml`作成
+- [x] `config/settings-prod.yml`作成
+- [x] `config/routes.txt`作成
+- [x] 環境変数設定（`.env.example`）
 
 **Acceptance Criteria:**
-- `cabal build`が成功する
-- 基本的なディレクトリ構造が整っている
-- 設定ファイルが読み込める
+- [x] 基本的なディレクトリ構造が整っている
+- [x] 設定ファイルが作成されている
+- [ ] `cabal build`が成功する（Task 2で実装後に検証）
 
 ---
 
@@ -799,7 +801,7 @@ Phase 1-3の完了後に実装を検討する機能については、[`future-en
 ## Progress Tracking
 
 ### Sprint 1 (Week 1) - Foundation
-- [ ] Task 1: Project Setup
+- [x] Task 1: Project Setup ✅ (2026-03-07)
 - [ ] Task 2: Yesod Foundation
 - [ ] Task 3: GraphQL Schema
 

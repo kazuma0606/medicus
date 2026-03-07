@@ -1,0 +1,27 @@
+packages:
+  .
+  ../
+
+-- Allow newer versions for compatibility
+allow-newer: all
+
+-- Optimization flags
+package medicus-api
+  ghc-options: -O2
+
+package medicus-engine
+  ghc-options: -O2
+
+-- Test configuration
+tests: True
+test-show-details: direct
+
+-- Benchmarks
+benchmarks: False
+
+-- Documentation
+documentation: True
+haddock-all: True
+
+-- Build configuration
+jobs: $ncpus

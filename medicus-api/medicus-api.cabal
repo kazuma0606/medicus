@@ -1,0 +1,213 @@
+cabal-version: 2.2
+
+name:           medicus-api
+version:        0.1.0.0
+synopsis:       Web API for MEDICUS Engine
+description:    GraphQL API for medical data security optimization engine
+category:       Web, Medical
+homepage:       https://github.com/yourusername/medicus-api
+author:         MEDICUS Research Team
+maintainer:     medicus@example.com
+copyright:      2026 MEDICUS Research Team
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/yourusername/medicus-api
+
+library
+  exposed-modules:
+      -- Foundation
+      Foundation
+      Settings
+      Import
+      
+      -- GraphQL
+      GraphQL.Schema
+      GraphQL.Resolvers
+      
+      -- GraphQL Query
+      GraphQL.Query.Space
+      GraphQL.Query.Health
+      
+      -- GraphQL Mutation
+      GraphQL.Mutation.Space
+      GraphQL.Mutation.Optimization
+      
+      -- GraphQL Types
+      GraphQL.Types.Space
+      GraphQL.Types.Optimization
+      GraphQL.Types.Error
+      GraphQL.Types.Common
+      
+      -- Handlers
+      Handler.GraphQL
+      Handler.Health
+      Handler.Playground
+      
+      -- Services
+      Service.Space
+      Service.Optimization
+      Service.Validation
+      
+      -- Utilities
+      Util.Conversion
+      Util.Error
+  
+  other-modules:
+      Paths_medicus_api
+  
+  autogen-modules:
+      Paths_medicus_api
+  
+  hs-source-dirs:
+      src
+  
+  default-extensions:
+      OverloadedStrings
+      RecordWildCards
+      DeriveGeneric
+      DeriveAnyClass
+      TypeFamilies
+      FlexibleContexts
+      GADTs
+      MultiParamTypeClasses
+      QuasiQuotes
+      TemplateHaskell
+      TypeApplications
+  
+  ghc-options:
+      -Wall
+      -Wcompat
+      -Widentities
+      -Wincomplete-record-updates
+      -Wincomplete-uni-patterns
+      -Wmissing-export-lists
+      -Wmissing-home-modules
+      -Wpartial-fields
+      -Wredundant-constraints
+      -fno-warn-orphans
+  
+  build-depends:
+      -- Base
+      base                  >= 4.7 && < 5
+    
+      -- Web Framework
+    , yesod                 >= 1.6
+    , yesod-core            >= 1.6
+    , yesod-form            >= 1.6
+    , wai                   >= 3.2
+    , wai-extra             >= 3.1
+    , warp                  >= 3.3
+    
+      -- GraphQL
+    , morpheus-graphql      >= 0.27
+    , morpheus-graphql-app  >= 0.27
+    
+      -- MEDICUS Engine (local dependency)
+    , medicus-engine
+    
+      -- JSON & Data
+    , aeson                 >= 2.0
+    , aeson-pretty          >= 0.8
+    , text                  >= 1.2
+    , bytestring            >= 0.10
+    , vector                >= 0.12
+    , unordered-containers  >= 0.2
+    
+      -- Time
+    , time                  >= 1.9
+    
+      -- Logging
+    , fast-logger           >= 3.0
+    , monad-logger          >= 0.3
+    
+      -- Configuration
+    , yaml                  >= 0.11
+    , file-embed            >= 0.0.10
+    
+      -- Utilities
+    , transformers          >= 0.5
+    , mtl                   >= 2.2
+    , exceptions            >= 0.10
+    , safe                  >= 0.3
+    , containers            >= 0.6
+  
+  default-language: Haskell2010
+
+executable medicus-api
+  main-is: Main.hs
+  other-modules:
+      Paths_medicus_api
+  autogen-modules:
+      Paths_medicus_api
+  hs-source-dirs:
+      app
+  ghc-options:
+      -threaded
+      -rtsopts
+      -with-rtsopts=-N
+      -Wall
+      -Wcompat
+      -Widentities
+  build-depends:
+      base
+    , medicus-api
+    , yesod
+    , yesod-core
+    , wai
+    , warp
+  default-language: Haskell2010
+
+test-suite medicus-api-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      -- GraphQL Tests
+      GraphQL.SchemaSpec
+      GraphQL.QuerySpec
+      GraphQL.MutationSpec
+      
+      -- Service Tests
+      Service.SpaceSpec
+      Service.OptimizationSpec
+      Service.ValidationSpec
+      
+      -- Utility Tests
+      Util.ConversionSpec
+      Util.ErrorSpec
+      
+      -- Integration Tests
+      Integration.E2ESpec
+      
+      Paths_medicus_api
+  autogen-modules:
+      Paths_medicus_api
+  hs-source-dirs:
+      test
+  ghc-options:
+      -threaded
+      -rtsopts
+      -with-rtsopts=-N
+      -Wall
+  build-depends:
+      base
+    , medicus-api
+    , medicus-engine
+    , hspec                 >= 2.7
+    , hspec-wai             >= 0.11
+    , yesod-test            >= 1.6
+    , aeson
+    , text
+    , bytestring
+    , wai
+    , wai-extra
+    , morpheus-graphql
+    , QuickCheck            >= 2.14
+  default-language: Haskell2010
