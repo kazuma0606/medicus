@@ -1,0 +1,10 @@
+-- MEDICUS API Routes
+
+-- GraphQL endpoint
+/graphql GraphQLR POST
+
+-- GraphQL Playground (development only)
+/playground PlaygroundR GET
+
+-- Health check
+/health HealthR GET

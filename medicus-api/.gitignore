@@ -1,0 +1,56 @@
+# Haskell
+dist/
+dist-newstyle/
+.stack-work/
+*.hi
+*.o
+*.prof
+*.aux
+*.hp
+*.eventlog
+.HTF/
+
+# Cabal
+cabal.project.local
+cabal.project.local~
+.ghc.environment.*
+
+# Stack
+.stack-work/
+stack.yaml.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Yesod
+client_session_key.aes
+config/client_session_key.aes
+static/tmp/
+yesod-devel/
+
+# Test
+.hpc/
+*.tix
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.local
+
+# Build artifacts
+*.dyn_hi
+*.dyn_o
+
+# Package management
+*.cabal~
+
+# Generated files
+Paths_*.hs

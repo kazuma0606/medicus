@@ -1,0 +1,24 @@
+resolver: nightly-2024-03-10  # Compatible with GHC 9.8
+
+packages:
+  - .
+
+# Extra dependencies (morpheus-graphql complete dependency tree)
+extra-deps:
+  - morpheus-graphql-0.28.4@sha256:03904ba010ed9d0d83ff7ff1a266b2b483cdb69521a63b75aa1d8855c84abfb2,17792
+  - morpheus-graphql-app-0.28.4@sha256:d5896b9b74ffdca8ab58ffd12a93b9de3f3ab2aae193ad9e1ec39743a87b8ef8,9201
+  - morpheus-graphql-code-gen-0.28.4@sha256:0d8b2a64794fa57595e1f771475178c0594bc82ed34211ed437bfabe82198bb7,2757
+  - morpheus-graphql-core-0.28.4@sha256:7ee1d1cc3e35d3c286a48023d85ada0e980bc4d78653f582deab3eb0fc2b8561,14208
+  - morpheus-graphql-server-0.28.4@sha256:449dc664f08d8a7c09e2b4f10332512d4252ca9ac072d9d9e3e60a700f08d17d,24589
+  - morpheus-graphql-client-0.28.4@sha256:60115e026b4c291cd35db9124922caeded5803d9b4e58a8e5dd4b6f23a9fc242,5334
+  - morpheus-graphql-code-gen-utils-0.28.4@sha256:a9fe54791958a40c2956bff431fea189ef4acdb35632f8338a29eae87b8aaf8b,1570
+  - morpheus-graphql-subscriptions-0.28.4@sha256:9d60a54d9a1889cc39dee59ab825536576594a90333ab1fddebfabf39e0455df,1783
+
+# Use system GHC 9.8.2 (already installed)
+system-ghc: true
+install-ghc: false
+skip-ghc-check: true
+
+# Build options
+ghc-options:
+  "$locals": -Wall -Wcompat -fno-warn-orphans
