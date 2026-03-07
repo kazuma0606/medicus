@@ -22,18 +22,17 @@ module Application
 import Foundation
 import Settings
 import Handler.Health
+import Handler.GraphQL
+import Handler.Playground
 
 import Yesod.Core
-import Yesod.Core.Types (Logger)
-import Yesod.Static (static)
 import Network.Wai (Middleware, Application)
+import Data.Default (def)
 import Network.Wai.Handler.Warp (Settings, defaultSettings, setPort, setHost, HostPreference)
 import Network.Wai.Middleware.RequestLogger
     ( Destination(..)
     , IPAddrSource(..)
     , OutputFormat(..)
-    , CustomOutputFormat
-    , CustomOutputFormatWithDetails
     , destination
     , mkRequestLogger
     , outputFormat
@@ -44,6 +43,7 @@ import System.Log.FastLogger
     , newFileLoggerSet
     , toLogStr
     , LoggerSet
+    , pushLogStrLn
     )
 import Network.HTTP.Types (statusCode)
 import Network.Wai.Internal (Request(..), Response)
@@ -52,6 +52,9 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Aeson (object, (.=), Value)
 import Data.String (fromString)
+
+-- Generate dispatch instance
+mkYesodDispatch "App" resourcesApp
 
 -- | Create the Wai application
 makeApplication :: App -> IO Application
@@ -64,29 +67,23 @@ makeApplication foundation = do
 makeFoundation :: AppSettings -> IO App
 makeFoundation settings = do
     -- Create logger
-    logger <- newStdoutLoggerSet defaultBufSize >>= makeYesodLogger
-    
-    -- Create static file serving
-    appStatic <- static "static"
+    loggerSet <- newStdoutLoggerSet defaultBufSize
     
     -- Create foundation
     let foundation = App
             { appSettings = settings
-            , appLogger = logger
-            , appStatic = appStatic
+            , appLogger = loggerSet
             }
     
     return foundation
 
 -- | Create logging middleware
 makeLogWare :: App -> IO Middleware
-makeLogWare foundation = do
-    let settings = appSettings foundation
-        logSettings = appLogging settings
-    
+makeLogWare _foundation = do
+    -- Simple logging middleware for now
     mkRequestLogger def
         { outputFormat = Apache FromFallback
-        , destination = Logger (appLogger foundation)
+        , destination = Callback (\logStr -> putStrLn $ show logStr)
         }
 
 -- | Get Warp settings from app settings

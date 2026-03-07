@@ -1,6 +1,8 @@
 packages:
   .
-  ../
+
+-- Cabal version constraint to avoid 3.10.3.0 issue
+constraints: Cabal <3.10.3 || >=3.12
 
 -- Allow newer versions for compatibility
 allow-newer: all

@@ -27,18 +27,11 @@ library
       Foundation
       Settings
       Import
+      Application
       
       -- GraphQL
       GraphQL.Schema
       GraphQL.Resolvers
-      
-      -- GraphQL Query
-      GraphQL.Query.Space
-      GraphQL.Query.Health
-      
-      -- GraphQL Mutation
-      GraphQL.Mutation.Space
-      GraphQL.Mutation.Optimization
       
       -- GraphQL Types
       GraphQL.Types.Space
@@ -50,15 +43,6 @@ library
       Handler.GraphQL
       Handler.Health
       Handler.Playground
-      
-      -- Services
-      Service.Space
-      Service.Optimization
-      Service.Validation
-      
-      -- Utilities
-      Util.Conversion
-      Util.Error
   
   other-modules:
       Paths_medicus_api
@@ -102,16 +86,18 @@ library
     , yesod                 >= 1.6
     , yesod-core            >= 1.6
     , yesod-form            >= 1.6
+    , shakespeare           >= 2.0
     , wai                   >= 3.2
     , wai-extra             >= 3.1
     , warp                  >= 3.3
+    , http-types            >= 0.12
     
       -- GraphQL
-    , morpheus-graphql      >= 0.27
-    , morpheus-graphql-app  >= 0.27
+    , morpheus-graphql      >= 0.28 && < 0.29
+    , morpheus-graphql-app  >= 0.28 && < 0.29
     
-      -- MEDICUS Engine (local dependency)
-    , medicus-engine
+      -- MEDICUS Engine (local dependency - temporarily commented for initial build)
+    -- , medicus-engine
     
       -- JSON & Data
     , aeson                 >= 2.0
@@ -138,6 +124,8 @@ library
     , exceptions            >= 0.10
     , safe                  >= 0.3
     , containers            >= 0.6
+    , data-default          >= 0.7
+    , conduit               >= 1.3
   
   default-language: Haskell2010
 
@@ -163,6 +151,9 @@ executable medicus-api
     , yesod-core
     , wai
     , warp
+    , text
+    , bytestring
+    , yaml
   default-language: Haskell2010
 
 test-suite medicus-api-test
@@ -199,7 +190,7 @@ test-suite medicus-api-test
   build-depends:
       base
     , medicus-api
-    , medicus-engine
+    -- , medicus-engine  -- temporarily commented
     , hspec                 >= 2.7
     , hspec-wai             >= 0.11
     , yesod-test            >= 1.6

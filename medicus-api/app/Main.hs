@@ -7,6 +7,8 @@ License     : BSD-3-Clause
 Main entry point for the MEDICUS API server.
 -}
 
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Application (makeApplication, makeFoundation)
@@ -25,6 +27,7 @@ import qualified Data.Text.IO as TIO
 import qualified Data.ByteString.Char8 as BS
 import Control.Exception (bracket, SomeException)
 import System.IO (hSetBuffering, stdout, stderr, BufferMode(LineBuffering))
+import Data.String (fromString)
 
 -- | Main entry point
 main :: IO ()
@@ -64,7 +67,8 @@ main = do
 
 -- | Convert Text to HostPreference
 textToHostPreference :: T.Text -> HostPreference
-textToHostPreference "*" = "*"
-textToHostPreference "*4" = "*4"
-textToHostPreference "*6" = "*6"
-textToHostPreference t = fromString (T.unpack t)
+textToHostPreference t
+    | t == T.pack "*" = fromString "*"
+    | t == T.pack "*4" = fromString "*4"
+    | t == T.pack "*6" = fromString "*6"
+    | otherwise = fromString (T.unpack t)

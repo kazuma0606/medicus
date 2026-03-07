@@ -8,6 +8,3 @@
 
 -- Health check
 /health HealthR GET
-
--- Static files
-/static StaticR Static appStatic
