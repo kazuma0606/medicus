@@ -1,4 +1,6 @@
-packages: .
+packages:
+  .
+  medicus-api/
 
 -- Optimization settings
 optimization: 2

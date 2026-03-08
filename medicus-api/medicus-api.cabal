@@ -32,6 +32,10 @@ library
       -- GraphQL
       GraphQL.Schema
       GraphQL.Resolvers
+      GraphQL.Query.Space
+      GraphQL.Query.Health
+      GraphQL.Mutation.Space
+      GraphQL.Mutation.Optimization
       
       -- GraphQL Types
       GraphQL.Types.Space
@@ -43,6 +47,15 @@ library
       Handler.GraphQL
       Handler.Health
       Handler.Playground
+      
+      -- Services
+      Service.Space
+      Service.Validation
+      Service.Optimization
+      
+      -- Utilities
+      Util.Conversion
+      Util.Error
   
   other-modules:
       Paths_medicus_api
@@ -96,8 +109,8 @@ library
     , morpheus-graphql      >= 0.28 && < 0.29
     , morpheus-graphql-app  >= 0.28 && < 0.29
     
-      -- MEDICUS Engine (local dependency - temporarily commented for initial build)
-    -- , medicus-engine
+      -- MEDICUS Engine (local dependency)
+    , medicus-engine
     
       -- JSON & Data
     , aeson                 >= 2.0
@@ -190,7 +203,7 @@ test-suite medicus-api-test
   build-depends:
       base
     , medicus-api
-    -- , medicus-engine  -- temporarily commented
+    , medicus-engine
     , hspec                 >= 2.7
     , hspec-wai             >= 0.11
     , yesod-test            >= 1.6
@@ -201,4 +214,24 @@ test-suite medicus-api-test
     , wai-extra
     , morpheus-graphql
     , QuickCheck            >= 2.14
+  default-language: Haskell2010
+
+benchmark medicus-api-bench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  hs-source-dirs:
+      bench
+  ghc-options:
+      -threaded
+      -rtsopts
+      -with-rtsopts=-N
+      -Wall
+  build-depends:
+      base
+    , medicus-api
+    , medicus-engine
+    , criterion             >= 1.5
+    , deepseq               >= 1.4
+    , text
+    , vector
   default-language: Haskell2010
