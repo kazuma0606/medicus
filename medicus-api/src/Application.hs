@@ -1,20 +1,19 @@
-{-|
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+{- |
 Module      : Application
 Description : Application initialization and middleware setup
 Copyright   : (c) MEDICUS Research Team, 2026
 License     : BSD-3-Clause
 
-Application initialization, including:
-- Foundation setup
-- Handler registration
-- Middleware configuration
-- Logging setup
+This module provides the entry points for creating the WAI application,
+setting up the foundation data structure, and configuring logging middleware.
 -}
 
-{-# LANGUAGE ViewPatterns #-}
-
 module Application
-    ( makeApplication
+    ( -- * Application Creation
+      makeApplication
     , makeFoundation
     , makeLogWare
     ) where
@@ -28,7 +27,7 @@ import Handler.Playground
 import Yesod.Core
 import Network.Wai (Middleware, Application)
 import Data.Default (def)
-import Network.Wai.Handler.Warp (Settings, defaultSettings, setPort, setHost, HostPreference)
+import Network.Wai.Handler.Warp (setPort)
 import Network.Wai.Middleware.RequestLogger
     ( Destination(..)
     , IPAddrSource(..)
@@ -40,36 +39,32 @@ import Network.Wai.Middleware.RequestLogger
 import System.Log.FastLogger
     ( defaultBufSize
     , newStdoutLoggerSet
-    , newFileLoggerSet
     , toLogStr
-    , LoggerSet
-    , pushLogStrLn
     )
-import Network.HTTP.Types (statusCode)
-import Network.Wai.Internal (Request(..), Response)
-import qualified Data.ByteString as BS
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import Data.Aeson (object, (.=), Value)
-import Data.String (fromString)
+import Data.Aeson (object, (.=), encode)
+import qualified Data.ByteString.Lazy as BSL
+import Data.Text.Encoding (decodeUtf8)
 
--- Generate dispatch instance
+-- | Generate the dispatch instance for the App foundation.
+-- This connects the routes defined in config/routes.txt to their handlers.
 mkYesodDispatch "App" resourcesApp
 
--- | Create the Wai application
+-- | Create the complete WAI application by wrapping the foundation
+-- with necessary middleware (logging, etc.).
 makeApplication :: App -> IO Application
 makeApplication foundation = do
     logWare <- makeLogWare foundation
     appPlain <- toWaiAppPlain foundation
     return $ logWare $ appPlain
 
--- | Create the foundation with all necessary resources
+-- | Initialize the application foundation.
+-- This includes loading settings and setting up shared resources like the logger.
 makeFoundation :: AppSettings -> IO App
 makeFoundation settings = do
-    -- Create logger
+    -- Create shared logger set for the application
     loggerSet <- newStdoutLoggerSet defaultBufSize
     
-    -- Create foundation
+    -- Construct the foundation record
     let foundation = App
             { appSettings = settings
             , appLogger = loggerSet
@@ -77,17 +72,26 @@ makeFoundation settings = do
     
     return foundation
 
--- | Create logging middleware
+-- | Create the logging middleware based on the application settings.
+-- In development, it uses a detailed human-readable format.
+-- In production, it uses a structured JSON format for machine consumption.
 makeLogWare :: App -> IO Middleware
-makeLogWare _foundation = do
-    -- Simple logging middleware for now
-    mkRequestLogger def
-        { outputFormat = Apache FromFallback
-        , destination = Callback (\logStr -> putStrLn $ show logStr)
-        }
-
--- | Get Warp settings from app settings
-getWarpSettings :: AppSettings -> Settings
-getWarpSettings settings =
-    setPort (appPort settings)
-    $ defaultSettings
+makeLogWare foundation = do
+    let settings = appSettings foundation
+    let isDev = appDevelopment settings
+    
+    if isDev
+        then mkRequestLogger def { outputFormat = Detailed True }
+        else mkRequestLogger def
+            { outputFormat = CustomOutputFormatWithBuilder $ \date req status _len _reqBody _resBody _time ->
+                let logEntry = object
+                        [ "time" .= decodeUtf8 (BSL.toStrict date)
+                        , "method" .= decodeUtf8 (requestMethod req)
+                        , "path" .= decodeUtf8 (rawPathInfo req)
+                        , "status" .= status
+                        , "ip" .= show (remoteHost req)
+                        , "user_agent" .= (decodeUtf8 <$> requestHeaderUserAgent req)
+                        ]
+                in toLogStr (encode logEntry) <> "\n"
+            , destination = Logger (appLogger foundation)
+            }

@@ -4,37 +4,40 @@ Description : Application settings and configuration
 Copyright   : (c) MEDICUS Research Team, 2026
 License     : BSD-3-Clause
 
-Application configuration management, including:
-- YAML configuration file parsing
-- Environment variable overrides
-- Development/production settings
+This module defines the configuration structures for the MEDICUS API
+and provides functions to load them from YAML files and environment variables.
 -}
 
 {-# LANGUAGE CPP #-}
 
 module Settings
-    ( AppSettings(..)
+    ( -- * Configuration Records
+      AppSettings(..)
     , GraphQLSettings(..)
     , CORSSettings(..)
     , LoggingSettings(..)
     , RateLimitSettings(..)
+    
+      -- * Loading Functions
     , loadSettings
     , loadSettingsFrom
     ) where
 
 import Data.Aeson
-import Data.Aeson.Types (typeMismatch)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Yaml (decodeFileEither)
 import System.Environment (lookupEnv)
 import Control.Exception (throwIO)
 
--- | GraphQL-specific settings
+-- | Settings specifically for the GraphQL engine and playground.
 data GraphQLSettings = GraphQLSettings
     { graphqlEndpoint :: !Text
+    -- ^ Path where the GraphQL API is served (e.g., "/graphql")
     , graphqlPlaygroundEnabled :: !Bool
+    -- ^ Whether to enable the interactive GraphQL Playground
     , graphqlMaxQueryDepth :: !Int
+    -- ^ Security: maximum depth allowed for GraphQL queries
     } deriving (Show, Eq)
 
 instance FromJSON GraphQLSettings where
@@ -44,12 +47,16 @@ instance FromJSON GraphQLSettings where
         graphqlMaxQueryDepth <- o .:? "max-query-depth" .!= 10
         return GraphQLSettings {..}
 
--- | CORS settings
+-- | Settings for Cross-Origin Resource Sharing (CORS).
 data CORSSettings = CORSSettings
     { corsEnabled :: !Bool
+    -- ^ Whether CORS middleware is active
     , corsOrigins :: ![Text]
+    -- ^ List of allowed origins (e.g., ["http://localhost:8080"])
     , corsMethods :: ![Text]
+    -- ^ Allowed HTTP methods
     , corsHeaders :: ![Text]
+    -- ^ Allowed request headers
     } deriving (Show, Eq)
 
 instance FromJSON CORSSettings where
@@ -60,11 +67,14 @@ instance FromJSON CORSSettings where
         corsHeaders <- o .:? "headers" .!= ["Content-Type"]
         return CORSSettings {..}
 
--- | Logging settings
+-- | Settings for the logging system.
 data LoggingSettings = LoggingSettings
     { loggingLevel :: !Text
+    -- ^ Minimum log level (DEBUG, INFO, WARN, ERROR)
     , loggingFormat :: !Text
+    -- ^ Output format (JSON, Apache)
     , loggingDestination :: !Text
+    -- ^ Where to write logs (stdout, file path)
     } deriving (Show, Eq)
 
 instance FromJSON LoggingSettings where
@@ -74,10 +84,12 @@ instance FromJSON LoggingSettings where
         loggingDestination <- o .:? "destination" .!= "stdout"
         return LoggingSettings {..}
 
--- | Rate limiting settings
+-- | Settings for the API rate limiter.
 data RateLimitSettings = RateLimitSettings
     { rateLimitEnabled :: !Bool
+    -- ^ Whether to restrict requests per time period
     , rateLimitRequestsPerMinute :: !Int
+    -- ^ Quota allowed per minute per client
     } deriving (Show, Eq)
 
 instance FromJSON RateLimitSettings where
@@ -86,12 +98,16 @@ instance FromJSON RateLimitSettings where
         rateLimitRequestsPerMinute <- o .:? "requests-per-minute" .!= 100
         return RateLimitSettings {..}
 
--- | Main application settings
+-- | Root configuration object for the entire application.
 data AppSettings = AppSettings
     { appPort :: !Int
+    -- ^ Port number Warp should listen on
     , appHost :: !Text
+    -- ^ Host/Interface Warp should bind to
     , appRoot :: !(Maybe Text)
+    -- ^ Optional base URL for generating absolute links
     , appDevelopment :: !Bool
+    -- ^ Whether the app is running in development mode (extra logging, etc.)
     , appGraphQL :: !GraphQLSettings
     , appCORS :: !CORSSettings
     , appLogging :: !LoggingSettings
@@ -126,7 +142,9 @@ instance FromJSON AppSettings where
             }
         return AppSettings {..}
 
--- | Load settings from the default config file
+-- | Load settings from the default configuration files.
+-- It checks the 'YESOD_ENV' environment variable to decide between
+-- production and development settings.
 loadSettings :: IO AppSettings
 loadSettings = do
     env <- lookupEnv "YESOD_ENV"
@@ -135,7 +153,7 @@ loadSettings = do
             _ -> "config/settings.yml"
     loadSettingsFrom configFile
 
--- | Load settings from a specific file
+-- | Load settings from a specific YAML file.
 loadSettingsFrom :: FilePath -> IO AppSettings
 loadSettingsFrom path = do
     result <- decodeFileEither path
@@ -143,7 +161,7 @@ loadSettingsFrom path = do
         Left err -> throwIO err
         Right settings -> applyEnvironmentOverrides settings
 
--- | Apply environment variable overrides
+-- | Internal helper to override loaded YAML settings with environment variables.
 applyEnvironmentOverrides :: AppSettings -> IO AppSettings
 applyEnvironmentOverrides settings = do
     port <- lookupEnv "PORT"

@@ -1,0 +1,11 @@
+.git
+.stack-work
+medicus-api/.stack-work
+dist-newstyle
+.cursor
+.kiro
+report
+reports
+*.md
+LICENSE
+.env

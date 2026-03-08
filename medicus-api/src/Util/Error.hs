@@ -12,11 +12,8 @@ and GraphQL error types.
 -}
 
 module Util.Error
-    ( -- * Error Types
-      MEDICUSError(..)
-    
-      -- * Error Conversion
-    , toGraphQLValidationError
+    ( -- * Error Conversion
+      toGraphQLValidationError
     , toGraphQLValidationErrors
     , medicusErrorToGraphQL
     , formatMEDICUSError
@@ -28,6 +25,10 @@ module Util.Error
     , validateDimensionRange
     , validateNormWeightsSum
     , validateConstraintDimensions
+    
+      -- * API Errors
+    , getErrorSuggestions
+    , makeAPIError
     ) where
 
 import Data.Text (Text)
@@ -35,87 +36,69 @@ import qualified Data.Text as T
 import GraphQL.Types.Error
     ( ValidationError(..)
     , ValidationWarning(..)
+    , APIError(..)
     , ErrorCode(..)
     )
 
--- TODO: Import MEDICUS Engine error types when dependency is enabled
--- import qualified MEDICUS.Error as ME
-
--- Placeholder MEDICUS Engine error types
-data MEDICUSError
-    = MEDICUSInvalidDimension Text
-    | MEDICUSInvalidNormWeights Text
-    | MEDICUSInvalidConstraint Text
-    | MEDICUSDimensionMismatch Text
-    | MEDICUSOptimizationFailed Text
-    | MEDICUSConvergenceFailed Text
-    | MEDICUSUnknownError Text
-    deriving (Eq, Show)
+-- MEDICUS Engine integration
+import qualified MEDICUS.API as MA
 
 -- * Error Conversion
 
 -- | Convert a single MEDICUS error to GraphQL ValidationError
-toGraphQLValidationError :: MEDICUSError -> ValidationError
-toGraphQLValidationError (MEDICUSInvalidDimension msg) = ValidationError
+toGraphQLValidationError :: MA.MEDICUSError -> ValidationError
+toGraphQLValidationError (MA.InvalidDimension dim) = ValidationError
     { field = "dimension"
-    , errorMessage = msg
+    , errorMessage = T.pack $ "Invalid dimension: " ++ show dim
     , errorCode = InvalidDimension
     }
-toGraphQLValidationError (MEDICUSInvalidNormWeights msg) = ValidationError
-    { field = "normWeights"
-    , errorMessage = msg
-    , errorCode = InvalidNormWeights
+toGraphQLValidationError MA.BoundsMismatch = ValidationError
+    { field = "dimension"
+    , errorMessage = "Dimension bounds mismatch"
+    , errorCode = InvalidDimension
     }
-toGraphQLValidationError (MEDICUSInvalidConstraint msg) = ValidationError
+toGraphQLValidationError (MA.ConstraintViolation msg) = ValidationError
     { field = "constraints"
-    , errorMessage = msg
+    , errorMessage = T.pack msg
     , errorCode = InvalidConstraint
     }
-toGraphQLValidationError (MEDICUSDimensionMismatch msg) = ValidationError
-    { field = "dimension"
-    , errorMessage = msg
-    , errorCode = InvalidDimension  -- Using closest match
-    }
-toGraphQLValidationError (MEDICUSOptimizationFailed msg) = ValidationError
+toGraphQLValidationError (MA.OptimizationFailed msg) = ValidationError
     { field = "optimization"
-    , errorMessage = msg
+    , errorMessage = T.pack msg
     , errorCode = InternalError
     }
-toGraphQLValidationError (MEDICUSConvergenceFailed msg) = ValidationError
+toGraphQLValidationError (MA.APINum msg) = ValidationError
     { field = "optimization"
-    , errorMessage = msg
-    , errorCode = ConvergenceFailure
+    , errorMessage = T.pack msg
+    , errorCode = InternalError
     }
-toGraphQLValidationError (MEDICUSUnknownError msg) = ValidationError
-    { field = "unknown"
-    , errorMessage = msg
+toGraphQLValidationError (MA.InvalidInput msg) = ValidationError
+    { field = "input"
+    , errorMessage = T.pack msg
+    , errorCode = InternalError
+    }
+toGraphQLValidationError (MA.ExportError msg) = ValidationError
+    { field = "export"
+    , errorMessage = T.pack msg
+    , errorCode = InternalError
+    }
+toGraphQLValidationError (MA.ImportError msg) = ValidationError
+    { field = "import"
+    , errorMessage = T.pack msg
     , errorCode = InternalError
     }
 
 -- | Convert multiple MEDICUS errors to GraphQL ValidationErrors
-toGraphQLValidationErrors :: [MEDICUSError] -> [ValidationError]
+toGraphQLValidationErrors :: [MA.MEDICUSError] -> [ValidationError]
 toGraphQLValidationErrors = map toGraphQLValidationError
 
 -- | Generic MEDICUS error to GraphQL error conversion
-medicusErrorToGraphQL :: MEDICUSError -> Text
+medicusErrorToGraphQL :: MA.MEDICUSError -> Text
 medicusErrorToGraphQL err = formatMEDICUSError err
 
 -- | Format MEDICUS error as user-friendly message
-formatMEDICUSError :: MEDICUSError -> Text
-formatMEDICUSError (MEDICUSInvalidDimension msg) =
-    "Invalid dimension: " <> msg
-formatMEDICUSError (MEDICUSInvalidNormWeights msg) =
-    "Invalid norm weights: " <> msg
-formatMEDICUSError (MEDICUSInvalidConstraint msg) =
-    "Invalid constraint: " <> msg
-formatMEDICUSError (MEDICUSDimensionMismatch msg) =
-    "Dimension mismatch: " <> msg
-formatMEDICUSError (MEDICUSOptimizationFailed msg) =
-    "Optimization failed: " <> msg
-formatMEDICUSError (MEDICUSConvergenceFailed msg) =
-    "Convergence failed: " <> msg
-formatMEDICUSError (MEDICUSUnknownError msg) =
-    "Unknown error: " <> msg
+formatMEDICUSError :: MA.MEDICUSError -> Text
+formatMEDICUSError = T.pack . show
 
 -- * Error Code Mapping
 
@@ -180,3 +163,34 @@ validateConstraintDimensions spaceDim constraintDims
         , errorCode = InvalidDimension
         }
     | otherwise = Nothing
+
+-- * API Errors
+
+-- | Get helpful suggestions for specific error codes
+getErrorSuggestions :: ErrorCode -> [Text]
+getErrorSuggestions InvalidDimension = 
+    [ "Ensure dimension is between 1 and 1000"
+    , "Check that input vector size matches space dimension"
+    ]
+getErrorSuggestions InvalidNormWeights = 
+    [ "Ensure lambda + mu + nu = 1.0"
+    , "Check that all weights are non-negative"
+    ]
+getErrorSuggestions InvalidConstraint = 
+    [ "Verify constraint thresholds are non-negative"
+    , "Ensure custom constraint functions are valid"
+    ]
+getErrorSuggestions ConvergenceFailure = 
+    [ "Try increasing maxIterations"
+    , "Try a different initial point"
+    , "Relax constraint tolerances"
+    ]
+getErrorSuggestions _ = ["Please contact technical support if the issue persists"]
+
+-- | Create a standard APIError from a message and code
+makeAPIError :: Text -> ErrorCode -> APIError
+makeAPIError msg code' = APIError
+    { message = msg
+    , code = code'
+    , suggestions = getErrorSuggestions code'
+    }

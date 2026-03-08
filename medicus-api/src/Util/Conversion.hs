@@ -8,7 +8,6 @@ License     : Proprietary
 Maintainer  : medicus@example.com
 
 This module provides conversion functions between GraphQL types and MEDICUS Engine types.
-Currently implemented as stubs until MEDICUS Engine integration is complete.
 -}
 
 module Util.Conversion
@@ -22,28 +21,24 @@ module Util.Conversion
     
       -- * Constraint Conversion
     , toMEDICUSConstraint
-    , fromMEDICUSConstraint
     , toMEDICUSConstraintType
-    , fromMEDICUSConstraintType
     
       -- * Optimization Conversion
-    , toMEDICUSOptimizationInput
-    , fromMEDICUSOptimizationResult
+    , toMEDICUSOptimizationConfig
+    , fromAPIOptimizationResult
     
       -- * Objective Function Conversion
-    , toMEDICUSObjectiveFunction
-    , toMEDICUSObjectiveType
-    , fromMEDICUSObjectiveType
+    -- , toMEDICUSObjectiveFunction
     ) where
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Vector.Storable as V
 
 -- GraphQL Types
 import GraphQL.Types.Space
     ( SpaceConfigInput(..)
     , ConstraintInput(..)
-    , ValidationResult(..)
     )
 import GraphQL.Types.Common
     ( NormWeightsInput(..)
@@ -53,199 +48,89 @@ import GraphQL.Types.Common
 import GraphQL.Types.Optimization
     ( OptimizationInput(..)
     , OptimizationResult(..)
-    , ObjectiveFunctionInput(..)
-    , ObjectiveType(..)
     , OptimizationOptions(..)
     )
 
--- TODO: Import MEDICUS Engine types when dependency is enabled
--- import qualified MEDICUS.Space as MS
--- import qualified MEDICUS.Optimization as MO
-
--- Placeholder types for MEDICUS Engine (to be replaced)
--- These represent the expected structure of MEDICUS Engine types
-data MEDICUSSpaceConfig = MEDICUSSpaceConfig
-    { medicusDimension :: Int
-    , medicusNormWeights :: MEDICUSNormWeights
-    , medicusConstraints :: [MEDICUSConstraint]
-    }
-
-data MEDICUSNormWeights = MEDICUSNormWeights
-    { medicusLambda :: Double
-    , medicusMu :: Double
-    , medicusNu :: Double
-    }
-
-data MEDICUSConstraint = MEDICUSConstraint
-    { medicusConstraintType :: MEDICUSConstraintType
-    , medicusThreshold :: Double
-    , medicusDescription :: Maybe Text
-    }
-
-data MEDICUSConstraintType
-    = MEDICUSPrivacyProtection
-    | MEDICUSEmergencyAccess
-    | MEDICUSSystemAvailability
-    | MEDICUSRegulatoryCompliance
-    | MEDICUSCustomConstraint
-    deriving (Eq, Show)
-
-data MEDICUSOptimizationInput = MEDICUSOptimizationInput
-    { medicusObjectiveFunction :: MEDICUSObjectiveFunction
-    , medicusInitialPoint :: [Double]
-    , medicusOptions :: Maybe MEDICUSOptimizationOptions
-    }
-
-data MEDICUSObjectiveFunction = MEDICUSObjectiveFunction
-    { medicusFunctionType :: MEDICUSObjectiveType
-    , medicusParameters :: Text
-    }
-
-data MEDICUSObjectiveType
-    = MEDICUSLinear
-    | MEDICUSQuadratic
-    | MEDICUSNonlinear
-    | MEDICUSCustomObjective
-    deriving (Eq, Show)
-
-data MEDICUSOptimizationOptions = MEDICUSOptimizationOptions
-    { medicusMaxIterations :: Maybe Int
-    , medicusTolerance :: Maybe Double
-    , medicusTimeoutSeconds :: Maybe Int
-    , medicusParallelEvaluation :: Maybe Bool
-    }
-
-data MEDICUSOptimizationResult = MEDICUSOptimizationResult
-    { medicusSuccess :: Bool
-    , medicusSolution :: [Double]
-    , medicusObjectiveValue :: Double
-    , medicusIterations :: Int
-    , medicusConverged :: Bool
-    , medicusMessage :: Maybe Text
-    , medicusComputationTimeMs :: Int
-    }
+-- MEDICUS Engine types
+import qualified MEDICUS.API as MA
+import qualified MEDICUS.Space.Types as MS
+import qualified MEDICUS.Constraints as MC
 
 -- * Space Configuration Conversion
 
 -- | Convert GraphQL SpaceConfigInput to MEDICUS Engine SpaceConfig
-toMEDICUSSpaceConfig :: SpaceConfigInput -> MEDICUSSpaceConfig
-toMEDICUSSpaceConfig config = MEDICUSSpaceConfig
-    { medicusDimension = dimension config
-    , medicusNormWeights = toMEDICUSNormWeights (normWeights config)
-    , medicusConstraints = map toMEDICUSConstraint (constraints config)
+toMEDICUSSpaceConfig :: SpaceConfigInput -> MA.SpaceConfig
+toMEDICUSSpaceConfig config = MA.SpaceConfig
+    { MA.scDimension = dimension config
+    , MA.scBounds = replicate (dimension config) (-10.0, 10.0) -- Default bounds
+    , MA.scConstraints = map toMEDICUSConstraint (constraints config)
+    , MA.scNormWeights = toMEDICUSNormWeights (normWeights config)
+    , MA.scTolerance = 1e-6 -- Default tolerance
     }
 
--- | Convert MEDICUS Engine SpaceConfig to GraphQL SpaceConfigInput
-fromMEDICUSSpaceConfig :: MEDICUSSpaceConfig -> SpaceConfigInput
+-- | Convert MEDICUS Engine SpaceConfig to GraphQL SpaceConfigInput (Partial)
+fromMEDICUSSpaceConfig :: MA.SpaceConfig -> SpaceConfigInput
 fromMEDICUSSpaceConfig config = SpaceConfigInput
-    { dimension = medicusDimension config
-    , normWeights = fromMEDICUSNormWeights (medicusNormWeights config)
-    , constraints = map fromMEDICUSConstraint (medicusConstraints config)
+    { dimension = MA.scDimension config
+    , normWeights = fromMEDICUSNormWeights (MA.scNormWeights config)
+    , constraints = [] -- Note: mapping back from MedicalConstraint is complex due to evaluator function
     }
 
 -- * Norm Weights Conversion
 
 -- | Convert GraphQL NormWeightsInput to MEDICUS Engine NormWeights
-toMEDICUSNormWeights :: NormWeightsInput -> MEDICUSNormWeights
-toMEDICUSNormWeights weights = MEDICUSNormWeights
-    { medicusLambda = lambda weights
-    , medicusMu = mu weights
-    , medicusNu = nu weights
+toMEDICUSNormWeights :: NormWeightsInput -> MS.NormWeights
+toMEDICUSNormWeights weights = MS.NormWeights
+    { MS.lambda = lambda (weights :: NormWeightsInput)
+    , MS.mu = mu (weights :: NormWeightsInput)
+    , MS.nu = nu (weights :: NormWeightsInput)
     }
 
 -- | Convert MEDICUS Engine NormWeights to GraphQL NormWeightsInput
-fromMEDICUSNormWeights :: MEDICUSNormWeights -> NormWeightsInput
+fromMEDICUSNormWeights :: MS.NormWeights -> NormWeightsInput
 fromMEDICUSNormWeights weights = NormWeightsInput
-    { lambda = medicusLambda weights
-    , mu = medicusMu weights
-    , nu = medicusNu weights
+    { lambda = MS.lambda weights
+    , mu = MS.mu weights
+    , nu = MS.nu weights
     }
 
 -- * Constraint Conversion
 
--- | Convert GraphQL ConstraintInput to MEDICUS Engine Constraint
-toMEDICUSConstraint :: ConstraintInput -> MEDICUSConstraint
-toMEDICUSConstraint constraint = MEDICUSConstraint
-    { medicusConstraintType = toMEDICUSConstraintType (constraintType constraint)
-    , medicusThreshold = threshold constraint
-    , medicusDescription = description constraint
-    }
+-- | Convert GraphQL ConstraintInput to MEDICUS Engine MedicalConstraint
+toMEDICUSConstraint :: ConstraintInput -> MS.MedicalConstraint
+toMEDICUSConstraint constraint = 
+    case constraintType constraint of
+        PrivacyProtection -> MC.createPrivacyConstraint (threshold constraint)
+        EmergencyAccess -> MC.createEmergencyConstraint (threshold constraint)
+        SystemAvailability -> MC.createAvailabilityConstraint (threshold constraint)
+        RegulatoryCompliance -> MC.createComplianceConstraint
+        CustomConstraint -> MC.createPrivacyConstraint (threshold constraint) -- Fallback
 
--- | Convert MEDICUS Engine Constraint to GraphQL ConstraintInput
-fromMEDICUSConstraint :: MEDICUSConstraint -> ConstraintInput
-fromMEDICUSConstraint constraint = ConstraintInput
-    { constraintType = fromMEDICUSConstraintType (medicusConstraintType constraint)
-    , threshold = medicusThreshold constraint
-    , description = medicusDescription constraint
-    }
-
--- | Convert GraphQL ConstraintType to MEDICUS Engine ConstraintType
-toMEDICUSConstraintType :: ConstraintType -> MEDICUSConstraintType
-toMEDICUSConstraintType PrivacyProtection = MEDICUSPrivacyProtection
-toMEDICUSConstraintType EmergencyAccess = MEDICUSEmergencyAccess
-toMEDICUSConstraintType SystemAvailability = MEDICUSSystemAvailability
-toMEDICUSConstraintType RegulatoryCompliance = MEDICUSRegulatoryCompliance
-toMEDICUSConstraintType CustomConstraint = MEDICUSCustomConstraint
-
--- | Convert MEDICUS Engine ConstraintType to GraphQL ConstraintType
-fromMEDICUSConstraintType :: MEDICUSConstraintType -> ConstraintType
-fromMEDICUSConstraintType MEDICUSPrivacyProtection = PrivacyProtection
-fromMEDICUSConstraintType MEDICUSEmergencyAccess = EmergencyAccess
-fromMEDICUSConstraintType MEDICUSSystemAvailability = SystemAvailability
-fromMEDICUSConstraintType MEDICUSRegulatoryCompliance = RegulatoryCompliance
-fromMEDICUSConstraintType MEDICUSCustomConstraint = CustomConstraint
+-- | Convert GraphQL ConstraintType to MEDICUS Engine ConstraintType (Basic mapping)
+toMEDICUSConstraintType :: ConstraintType -> MS.ConstraintType
+toMEDICUSConstraintType _ = MS.Inequality 0.5 -- Default placeholder
 
 -- * Optimization Conversion
 
--- | Convert GraphQL OptimizationInput to MEDICUS Engine OptimizationInput
-toMEDICUSOptimizationInput :: OptimizationInput -> MEDICUSOptimizationInput
-toMEDICUSOptimizationInput input = MEDICUSOptimizationInput
-    { medicusObjectiveFunction = toMEDICUSObjectiveFunction (objective input)
-    , medicusInitialPoint = initialPoint input
-    , medicusOptions = toMEDICUSOptions <$> options input
+-- | Convert GraphQL OptimizationInput to MEDICUS Engine OptimizationConfig
+toMEDICUSOptimizationConfig :: OptimizationInput -> MA.OptimizationConfig
+toMEDICUSOptimizationConfig input = MA.OptimizationConfig
+    { MA.ocInitialPoint = V.fromList (initialPoint input)
+    , MA.ocMaxIterations = maybe 100 maxIterations (options input)
+    , MA.ocTolerance = maybe 1e-6 tolerance (options input)
+    , MA.ocStepSize = 0.01 -- Default step size
     }
-  where
-    toMEDICUSOptions :: OptimizationOptions -> MEDICUSOptimizationOptions
-    toMEDICUSOptions opts = MEDICUSOptimizationOptions
-        { medicusMaxIterations = maxIterations opts
-        , medicusTolerance = tolerance opts
-        , medicusTimeoutSeconds = timeoutSeconds opts
-        , medicusParallelEvaluation = parallelEvaluation opts
-        }
 
 -- | Convert MEDICUS Engine OptimizationResult to GraphQL OptimizationResult
-fromMEDICUSOptimizationResult :: MEDICUSOptimizationResult -> OptimizationResult
-fromMEDICUSOptimizationResult result = OptimizationResult
-    { success = medicusSuccess result
-    , solution = medicusSolution result
-    , objectiveValue = medicusObjectiveValue result
-    , iterations = medicusIterations result
-    , converged = medicusConverged result
-    , message = medicusMessage result
-    , constraintViolations = []  -- TODO: convert from MEDICUS Engine
-    , convergenceHistory = Nothing  -- TODO: convert from MEDICUS Engine
-    , computationTimeMs = medicusComputationTimeMs result
+fromAPIOptimizationResult :: MA.APIOptimizationResult -> Int -> OptimizationResult
+fromAPIOptimizationResult result timeMs = OptimizationResult
+    { success = MA.orConverged result
+    , solution = V.toList (MA.orSolution result)
+    , objectiveValue = MA.orObjectiveValue result
+    , iterations = MA.orIterations result
+    , converged = MA.orConverged result
+    , message = T.pack <$> MA.orError result
+    , constraintViolations = [] -- TODO: map from engine
+    , convergenceHistory = Nothing
+    , computationTimeMs = timeMs
     }
-
--- * Objective Function Conversion
-
--- | Convert GraphQL ObjectiveFunctionInput to MEDICUS Engine ObjectiveFunction
-toMEDICUSObjectiveFunction :: ObjectiveFunctionInput -> MEDICUSObjectiveFunction
-toMEDICUSObjectiveFunction objFunc = MEDICUSObjectiveFunction
-    { medicusFunctionType = toMEDICUSObjectiveType (functionType objFunc)
-    , medicusParameters = parameters objFunc
-    }
-
--- | Convert GraphQL ObjectiveType to MEDICUS Engine ObjectiveType
-toMEDICUSObjectiveType :: ObjectiveType -> MEDICUSObjectiveType
-toMEDICUSObjectiveType Linear = MEDICUSLinear
-toMEDICUSObjectiveType Quadratic = MEDICUSQuadratic
-toMEDICUSObjectiveType Nonlinear = MEDICUSNonlinear
-toMEDICUSObjectiveType CustomObjective = MEDICUSCustomObjective
-
--- | Convert MEDICUS Engine ObjectiveType to GraphQL ObjectiveType
-fromMEDICUSObjectiveType :: MEDICUSObjectiveType -> ObjectiveType
-fromMEDICUSObjectiveType MEDICUSLinear = Linear
-fromMEDICUSObjectiveType MEDICUSQuadratic = Quadratic
-fromMEDICUSObjectiveType MEDICUSNonlinear = Nonlinear
-fromMEDICUSObjectiveType MEDICUSCustomObjective = CustomObjective

@@ -19,7 +19,7 @@ Yesod application foundation, including:
 module Foundation where
 
 import Yesod.Core
-import System.Log.FastLogger (LoggerSet)
+import System.Log.FastLogger (LoggerSet, LogStr, pushLogStrLn, toLogStr, fromLogStr)
 import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8)
@@ -105,17 +105,36 @@ instance Yesod App where
             ]
         provideRep $ return $ toHtml ("Method not allowed: " <> decodeUtf8 method :: Text)
 
-    -- Logging function (TODO: Implement with proper types)
-    -- messageLoggerSource :: App -> Logger -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
-    -- messageLoggerSource app logger loc source level msg = ...
+    -- Structured logging
+    messageLoggerSource :: App -> LoggerSet -> Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+    messageLoggerSource app _loggerSet _loc source level msg = do
+        let settings = appSettings app
+        if appLoggingFormat (appLogging settings) == "JSON"
+            then do
+                let logEntry = object
+                        [ "source" .= source
+                        , "level" .= show level
+                        , "message" .= decodeUtf8 (fromLogStr msg)
+                        ]
+                pushLogStrLn (appLogger app) (toLogStr $ A.encode logEntry)
+            else
+                pushLogStrLn (appLogger app) $ 
+                    "[" <> toLogStr source <> "#" <> toLogStr (show level) <> "] " <> msg
 
-    -- Maximum content length (TODO: Re-enable after fixing types)
-    -- maximumContentLength :: App -> Maybe (Route App) -> Maybe Word64
-    -- maximumContentLength _ _ = Just (10 * 1024 * 1024) -- 10 MB
+    shouldLogIO :: App -> LogSource -> LogLevel -> IO Bool
+    shouldLogIO app _source level = do
+        let settings = appSettings app
+        let minLevel = case loggingLevel (appLogging settings) of
+                "DEBUG" -> LevelDebug
+                "INFO" -> LevelInfo
+                "WARN" -> LevelWarn
+                "ERROR" -> LevelError
+                _ -> LevelInfo
+        return $ level >= minLevel
 
-    -- Should log IO (TODO: Re-enable after fixing types)
-    -- shouldLogIO :: App -> LogSource -> LogLevel -> IO Bool
-    -- shouldLogIO app _ level = ...
+-- | Helper for settings access
+appLoggingFormat :: LoggingSettings -> Text
+appLoggingFormat = loggingFormat
 
 -- | Custom middleware wrapper (CORS headers are added in handlers for now)
 -- Future: Implement proper WAI middleware for CORS
