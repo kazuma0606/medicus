@@ -43,6 +43,10 @@ library
       Handler.GraphQL
       Handler.Health
       Handler.Playground
+      
+      -- Utilities
+      Util.Conversion
+      Util.Error
   
   other-modules:
       Paths_medicus_api
