@@ -1,0 +1,148 @@
+# Lean 4 形式検証 タスク一覧
+
+> **対応文書**
+> - 仕様：`verify/PROOF_SPEC.md`
+> - 論文：`report/SUBMISSION_CANDIDATE_report_v3_math.md`
+>
+> **方針**
+> - `PatientState` は抽象型（ℝ³ に固定しない）
+> - `noncomm_exists` は抽象的存在証明（データセット不使用）
+> - Step 2 完了時点で論文投稿可能（部分的形式検証済みとして）
+
+---
+
+## 0. 環境構築
+
+- [x] 0.1 Lean 4 プロジェクト初期化
+  - `lake init medicus-verify` でプロジェクト作成
+  - `lakefile.lean` に `mathlib4` 依存を追加
+  - `lake update` で Mathlib キャッシュを取得
+  - _仕様: PROOF_SPEC §0_
+
+- [x] 0.2 Mathlib の利用可能性確認
+  - `import Mathlib.Topology.Basic` が通ることを確認
+  - `import Mathlib.Analysis.Calculus.BumpFunction.Basic` が通ることを確認
+  - `import Mathlib.MeasureTheory.Integral.SetIntegral` が通ることを確認
+  - _仕様: PROOF_SPEC §3.1_
+
+---
+
+## 1. 基本型定義
+
+- [x] 1.1 患者状態空間・介入の型定義
+  - `variable (𝒫 : Type*) [TopologicalSpace 𝒫]` を定義
+  - `MedicalIntervention 𝒫 := 𝒫 → 𝒫` を定義
+  - `compose` 関数（写像の合成）を定義
+  - `idIntervention`（恒等介入）を定義
+  - _仕様: PROOF_SPEC §0.1〜0.3_
+
+- [x] 1.2 公理の定式化
+  - `axiom state_dependent_intervention`：状態依存的な介入の存在
+  - `axiom irreversible_intervention`：不可逆な介入の存在
+  - 各公理のコメントに臨床的動機を記載
+  - _仕様: PROOF_SPEC §4（公理リスト）_
+
+---
+
+## 2. Layer 1：非可換モノイドの証明
+> **★ 最優先：ここまで完了すれば論文投稿可能**
+
+- [x] 2.1 Monoid instance（モノイド公理）
+  - `instance : Monoid (MedicalIntervention 𝒫)` を実装
+  - 閉性：`mul_assoc` — `Function.comp_assoc` を流用
+  - 単位元：`one_mul` / `mul_one` — `Function.id_comp` / `Function.comp_id` を流用
+  - _仕様: PROOF_SPEC §1.1_
+
+- [x] 2.2 `noncomm_exists`（非可換性の存在）
+  - `theorem noncomm_exists : ∃ a b : MedicalIntervention 𝒫, a * b ≠ b * a`
+  - `state_dependent_intervention` 公理から導出
+  - `funext` の逆（関数の外延的等号 → 点ごとの等号）を利用
+  - _仕様: PROOF_SPEC §1.2_
+
+- [x] 2.3 `no_inverse`（群でないこと）
+  - `theorem no_inverse : ∃ a : MedicalIntervention 𝒫, ¬∃ b, ∀ p, b (a p) = p`
+  - `irreversible_intervention` 公理から直接導出
+  - _仕様: PROOF_SPEC §1.3_
+
+- [x] 2.4 チェックポイント：Layer 1 の確認
+  - 3 つの定理がエラーなくコンパイルされることを確認
+  - `#check noncomm_exists` `#check no_inverse` が通ることを確認
+  - **この時点で arXiv 投稿可能（Appendix A.1 として掲載）**
+
+---
+
+## 3. Layer 2：Banach 空間の証明
+
+- [ ] 3.1 MEDICUS 最小空間の型定義
+  - `variable (Ω : Set (Fin n → ℝ)) [BoundedSpace Ω]` を定義
+  - `MedicusMin Ω := {f : Ω → ℝ | Differentiable ℝ f}` を部分型として定義
+  - `Subtype` か `Structure` かを選択（PROOF_SPEC §5 の未解決事項）
+  - _仕様: PROOF_SPEC §2.0_
+
+- [ ] 3.2 MEDICUS ノルムの定義
+  - `medicusNorm f := ‖f‖_∞ + ‖fderiv ℝ f ·‖_∞` を定義
+  - `fderiv` と `‖·‖∞` の Mathlib 上の型を整合させる
+  - _仕様: PROOF_SPEC §2.1_
+
+- [ ] 3.3 ノルム公理の証明（正定値性・斉次性・三角不等式）
+  - `lemma medicus_pos_def` — `‖f‖∞ = 0 → f ≡ 0` から導出
+  - `lemma medicus_smul` — `norm_smul` を流用
+  - `lemma medicus_triangle` — `norm_add_le` + 勾配の線形性を利用
+  - _仕様: PROOF_SPEC §2.1〜2.3_
+
+- [ ] 3.4 Banach 空間（完備性）の証明
+  - `theorem medicus_complete : CompleteSpace (MedicusMin Ω)`
+  - Step 1：$C(\bar\Omega)$ の完備性（`ContinuousMap.completeSpace`）
+  - Step 2：勾配列の Cauchy 性
+  - Step 3：`hasFDerivAt_of_tendsto_uniformly` で微分と極限の交換
+  - ⚠️ **最難関**：Step 3 の適用条件の整合が要確認
+  - _仕様: PROOF_SPEC §2.4_
+
+- [ ] 3.5 チェックポイント：Layer 2 の確認
+  - `#check medicus_complete` が通ることを確認
+  - ノルム公理 3 つ + 完備性がすべてコンパイルされることを確認
+  - **Appendix A.2 として追加**
+
+---
+
+## 4. Layer 3：Mollifier の証明
+
+- [ ] 4.1 Mollifier の C∞ 性
+  - `theorem mollifier_smooth : ∀ ε > 0, ContDiff ℝ ⊤ (mollify f ε)`
+  - `Mathlib.Analysis.Calculus.BumpFunction.Basic` の `ContDiffBump.contDiff` を流用
+  - `MeasureTheory.convolution_contDiff` で畳み込みの滑らかさを適用
+  - _仕様: PROOF_SPEC §3.1_
+
+- [ ] 4.2 収束性の証明
+  - `theorem mollifier_converges` — `‖f_ε - f‖_M0 → 0`
+  - `‖f_ε - f‖∞` 部分：`MeasureTheory.tendsto_convolution` を流用
+  - `‖∇f_ε - ∇f‖∞` 部分：`∇(f*φ) = (∇f)*φ` の交換を利用
+  - _仕様: PROOF_SPEC §3.2_
+
+- [ ] 4.3 フレシェ微分可能性（系）
+  - `theorem mollifier_frechet_diff` — C∞ からフレシェ微分可能の自動帰結
+  - `ContDiff.differentiable` → `Differentiable.hasFDerivAt` を繋ぐ
+  - 連鎖律の成立（`HasFDerivAt.comp`）を確認
+  - _仕様: PROOF_SPEC §3.3_
+
+- [ ] 4.4 チェックポイント：Layer 3 の確認
+  - 3 つの定理がコンパイルされることを確認
+  - **Appendix A.3 として追加、Appendix 完成**
+
+---
+
+## 5. 論文への統合・投稿
+
+- [ ] 5.1 Appendix A の Lean 4 コードを整形
+  - 各定理に日本語コメントを追加
+  - GitHub リポジトリの URL を確定
+  - `SUBMISSION_CANDIDATE_report_v3_math.md` の Appendix A に挿入
+
+- [ ] 5.2 arXiv プレプリント投稿
+  - math.FA カテゴリで投稿
+  - GitHub リポジトリ（Lean 4 コード）を本文中に参照
+  - 「部分的に / 完全に形式検証済み」の記載を確定
+
+- [ ] 5.3 査読付きジャーナルへの投稿
+  - 投稿先の最終確定（応用数学系推奨）
+  - 査読コメントに応じて必要箇所のみ追記
