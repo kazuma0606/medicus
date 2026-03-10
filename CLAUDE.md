@@ -27,8 +27,15 @@
 
 ## 現状の一言サマリー
 
-「離散的な医療介入を $C^\infty$ 空間に厳密に埋め込み、非可換な順序依存性を現代的な勾配最適化で解く枠組みを作った。核心は動いている。次は非可換性の数値実証と Adam の実装。」
+「最小 MEDICUS 空間（$C^1$ ノルム）の Banach 性は証明できる。Mollifier で $C^\infty$ が保証される。Shannon エントロピーはノルムに含めず目的関数へ。次は Lean 4 で Monoid 公理を通す。」
 → 詳細は `discussion/STATUS.md`
+
+## 論文方針
+
+**数学寄り（arXiv math.FA）** — `report/report_v3_math.md` が現行版
+- Definition → Lemma → Theorem → Proof 構造
+- ノルムを最小版（証明可能）と拡張版（要検証）に正直に分離
+- 投稿先：arXiv math.FA、応用数学系ジャーナル
 
 ## 文書の地図
 
