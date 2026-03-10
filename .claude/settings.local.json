@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(~/.elan/bin/lake build:*)",
-      "Bash(lake build:*)"
+      "Bash(lake build:*)",
+      "Bash(~/.elan/bin/lake env:*)"
     ]
   }
 }

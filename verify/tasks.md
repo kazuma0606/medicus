@@ -107,27 +107,28 @@
 
 ## 4. Layer 3：Mollifier の証明
 
-- [ ] 4.1 Mollifier の C∞ 性
-  - `theorem mollifier_smooth : ∀ ε > 0, ContDiff ℝ ⊤ (mollify f ε)`
-  - `Mathlib.Analysis.Calculus.BumpFunction.Basic` の `ContDiffBump.contDiff` を流用
-  - `MeasureTheory.convolution_contDiff` で畳み込みの滑らかさを適用
+- [x] 4.1 Mollifier の C∞ 性
+  - `theorem mollifier_smooth : ContDiff ℝ (⊤ : ℕ∞) (mollify f ε hε)`
+  - `ContDiffBump.contDiff` + `HasCompactSupport.contDiff_convolution_right` を適用
+  - 注: `ContDiff ℝ ⊤` は解析的レベル（強すぎ）；C∞ は `ContDiff ℝ (⊤ : ℕ∞)` と型注釈が必要
   - _仕様: PROOF_SPEC §3.1_
 
-- [ ] 4.2 収束性の証明
-  - `theorem mollifier_converges` — `‖f_ε - f‖_M0 → 0`
-  - `‖f_ε - f‖∞` 部分：`MeasureTheory.tendsto_convolution` を流用
-  - `‖∇f_ε - ∇f‖∞` 部分：`∇(f*φ) = (∇f)*φ` の交換を利用
+- [~] 4.2 収束性の証明（部分証明）
+  - `theorem mollifier_pointwise_converges` — 点ごと収束を証明済み
+    - `ContDiffBump.convolution_tendsto_right_of_continuous` を流用
+  - `theorem mollifier_converges` — M_0 ノルム収束 (sorry; 証明戦略をコメントに記載)
+    - `‖f_ε - f‖∞` : Lipschitz → 一様連続 → 一様収束（形式化に追加補題が必要）
+    - `‖∇f_ε - ∇f‖∞` : 微分と畳み込みの交換 + 同様の議論
   - _仕様: PROOF_SPEC §3.2_
 
-- [ ] 4.3 フレシェ微分可能性（系）
-  - `theorem mollifier_frechet_diff` — C∞ からフレシェ微分可能の自動帰結
-  - `ContDiff.differentiable` → `Differentiable.hasFDerivAt` を繋ぐ
-  - 連鎖律の成立（`HasFDerivAt.comp`）を確認
+- [x] 4.3 フレシェ微分可能性（系）
+  - `theorem mollifier_frechet_diff` — sorry ゼロで証明済み
+  - `ContDiff.differentiable` → `Differentiable.hasFDerivAt` を繋いで完成
   - _仕様: PROOF_SPEC §3.3_
 
-- [ ] 4.4 チェックポイント：Layer 3 の確認
-  - 3 つの定理がコンパイルされることを確認
-  - **Appendix A.3 として追加、Appendix 完成**
+- [x] 4.4 チェックポイント：Layer 3 の確認
+  - `lake build` がエラーゼロ（sorry 警告 1 件のみ）で完了
+  - **Appendix A.3 として追加**
 
 ---
 
