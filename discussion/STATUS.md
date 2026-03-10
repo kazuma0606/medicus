@@ -97,13 +97,28 @@
 
 ---
 
-## 5. 一行で言うと
+## 5. 論文方針（更新）
 
-> **「離散的な医療介入を $C^\infty$ 空間に厳密に埋め込み、
-> 非可換な順序依存性を現代的な勾配最適化で解く枠組みを作った。
-> 核心は動いている。次は非可換性の数値実証と Adam の実装。」**
+**方向：数学寄り（arXiv math.FA 想定）**
+
+| バージョン | 特徴 | 状態 |
+|---|---|---|
+| `report.md` | 初期ドラフト（飛躍あり） | 参照用 |
+| `report_v2_positioning.md` | ML/AI寄り、DL との比較 | 保存 |
+| `report_v3_math.md` | **数学論文構造、Def-Lemma-Thm-Proof** | **現行** |
+
+**数学版の核心的変更：**
+- ノルムを「最小版（$\|\cdot\|_{\mathcal{M}_0}$ = $C^1$ ノルム、証明済み）」と「拡張版（エントロピー項、要検証）」に分離
+- Shannon エントロピーはノルムに含めず目的関数に移動（凹関数問題を回避）
+- Lean 4 形式検証が最優先タスクに格上げ
+
+## 6. 一行で言うと
+
+> **「最小 MEDICUS 空間の Banach 性は証明できる。
+> Mollifier で $C^\infty$ が保証される。
+> 次は Lean 4 で `Monoid MedicalIntervention` を通す。」**
 
 ---
 
-*最終更新：2026-03-09*
-*参照：`discussion/CORE_CLAIM.md`、`report/report_v2_positioning.md`*
+*最終更新：2026-03-10*
+*参照：`discussion/CORE_CLAIM.md`、`report/report_v3_math.md`*

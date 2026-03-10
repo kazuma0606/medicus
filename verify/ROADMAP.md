@@ -1,71 +1,113 @@
-# MEDICUS Verification Roadmap: Haskell & Lean 4 Integration
+# MEDICUS 検証ロードマップ（2026-03-10 改訂）
 
-このドキュメントは、MEDICUSプロジェクトの理論的正当性と実効性を担保するために、Haskell（実効レイヤー）とLean 4（正当性レイヤー）のハイブリッドシステムで検証すべき事項を網羅したものである。
-
-## 1. 基礎解析・平滑化レイヤー (The Smooth Field)
-「不連続な離散値を滑らかな場に変換する」プロセスが数学的に正当であることを検証する。
-
-*   **1.1 モライアの無限回微分可能性 ($C^\infty$ 性)**
-    *   **Lean 4:** 任意の $L^1$ 関数 $f$ に対し、$\epsilon > 0$ であれば平滑化作用素 $M_\epsilon f$ が無限回微分可能であることを証明する。
-    *   **Haskell:** 数値微分を行い、高階導関数が有限値に収まるかをプロパティテストで検証する。
-*   **1.2 ノルムの公理 (Norm Axioms)**
-    *   **Lean 4:** `medicusNorm` がノルムの3公理（正定値性、斉次性、三角不等式）を満たすことを証明する。
-    *   **Haskell:** ランダムな関数ペアに対し、三角不等式 $\|f+g\| \le \|f\|+\|g\|$ が成立するかを検証する。
-*   **1.3 収束の保証 (Mollifier Convergence)**
-    *   **Lean 4:** $\epsilon \to 0$ の極限において、平滑化された関数 $f_\epsilon$ が元の関数 $f$ に一様収束することを証明する。
-    *   **Haskell:** $\epsilon$ を段階的に小さくした際の計算結果の差が、収束レート $O(\epsilon^k)$ に従うかを計測する。
-
-## 2. 最適化・数値安定性レイヤー (Optimization Stability)
-「計算が途中で止まらない、破綻しない」ことを代数的に保証する。
-
-*   **2.1 行列式と可逆性 (Determinant & Invertibility)**
-    *   **Lean 4:** ヘッセ行列 $H$ が特定の制約領域内において常に非特異（$det(H) \neq 0$）であることを証明する。
-    *   **Haskell:** ニュートン法の各ステップで行列式を監視し、数値的な特異点への接近をガードする。
-*   **2.2 目的関数の凸性 (Convexity)**
-    *   **Lean 4:** 目的関数のヘッセ行列が正定値であることを証明する。エントロピー項（凹）とペナルティ項（凸）の重みバランスの閾値を導出する。
-    *   **Haskell:** ランダムな探索点において、ヘッセ行列の固有値がすべて正であることを検証する。
-
-## 3. 情報理論・不確定性レイヤー (Information Dynamics)
-「完璧な統治は不可能である」という物理的限界を数理的に確定させる。
-
-*   **3.1 交換関係の非ゼロ証明 (Non-vanishing Commutator)**
-    *   **Lean 4:** セキュリティ演算子 $\hat{S}$ と効率演算子 $\hat{E}$ の交換子 $[\hat{S}, \hat{E}]$ が非ゼロであることを代数的に証明する。
-    *   **Haskell:** 異なる順序の操作（$S \circ E$ と $E \circ S$）の結果の差が、不確定性下限 $K$ を下回らないことを検証する。
-*   **3.2 不確定性下限の導出 (Uncertainty Bound)**
-    *   **Lean 4:** 情報の最小粒度（Bit単位の離散性）から、不確定性不等式の定数 $K$ を理論的に導出する。
-*   **3.3 エントロピー増大の不可逆性 (Entropy Production)**
-    *   **Lean 4:** 医療介入が行われるたびに、システム全体の最小エントロピーが増大（情報の消失）することを証明する。
-
-## 4. 代数的構造・群論レイヤー (Algebraic Governance)
-「時間軸を伴うデータの順序」を群の作用として検証する。
-
-*   **4.1 非可換群の結合法則 (Group Action)**
-    *   **Lean 4:** 医療操作の合成が結合法則を満たし、非可換群の構造を持つことを証明する。
-    *   **Haskell:** 複雑な治療シーケンスを異なる結合順序で実行し、結果の整合性をテストする。
-*   **4.2 不変量の保存 (Invariants Preservation)**
-    *   **Lean 4:** どのようなガバナンス操作（群の作用）を受けても、患者の権利等の「不変量」が変化しないことを証明する。
-*   **4.3 逆元の不在証明**
-    *   **Lean 4:** 特定の介入（手術、放射線等）に対応する射に、数学的な逆元が存在しない（不可逆である）ことを圏論的に定義する。
-
-## 5. 臨床数理・時間軸レイヤー (Clinical Arrow of Time)
-「放射線と化学療法の順序」等の具体的な臨床的問いを検証する。
-
-*   **5.1 治療順序の非対称性 ($R \times C \neq C \times R$)**
-    *   **Lean 4:** 腫瘍成長モデルに対し、放射線と化療の順序を入れ替えた際の出力関数の非等価性を証明する。
-    *   **Haskell:** 臨床シナリオに基づき、順序 A-B と B-A で生存率や副作用スコアに有意差が出ることをシミュレーションで確認する。
-*   **5.2 履歴依存性 (Path Dependency)**
-    *   **Lean 4:** 現在の状態が過去のすべての介入の合成の結果であることをファンクターとして定式化する。
-
-## 6. システム・インターフェースレイヤー (The Bridge)
-「Haskell と Lean 4 の連携」そのものの安全性を検証する。
-
-*   **6.1 Protobuf スキーマの整合性**
-    *   **Integration:** 両者の生成コードが同一のバイナリ表現を持つことを、相互デシリアライズテストで保証する。
-*   **6.2 数値誤差の許容範囲 (Floating Point vs Real)**
-    *   **Lean 4:** 理論上の実数での証明が、Haskellの浮動小数点計算においてどの程度の誤差まで許容されるかを解析する。
+> **改訂の背景**
+> 旧版は「非可換群」「セキュリティ×効率の不確定性」「Protobuf スキーマ」等を含んでいたが、
+> 現在の理論的議論と整合していなかった。本版は `SUBMISSION_CANDIDATE_report_v3_math.md`
+> の Layer 1・2 を唯一の基準として整理し直したもの。
 
 ---
-**核心的優先事項:**
-1. 不確定性関係式の証明と監視 (3.1, 3.2)
-2. 行列式による計算破綻の回避 (2.1)
-3. 治療順序の非可換性シミュレーション (5.1)
+
+## 証明が必要なもの（論文の主張に直結）
+
+これらは Lean 4 で形式検証し、論文 Appendix A に掲載する。
+
+---
+
+### Layer 1：介入代数（非可換モノイド）
+
+| # | 命題 | 内容 | 優先度 |
+|---|---|---|---|
+| 1.1 | **モノイド公理（閉性）** | $E_a \circ E_b \in \mathcal{E}$ | ★ 最高 |
+| 1.2 | **モノイド公理（結合法則）** | $(E_a \circ E_b) \circ E_c = E_a \circ (E_b \circ E_c)$ | ★ 最高 |
+| 1.3 | **モノイド公理（単位元）** | $\exists\,\mathrm{id}$ s.t. $\mathrm{id} \circ E = E \circ \mathrm{id} = E$ | ★ 最高 |
+| 1.4 | **非可換性の存在** | $\exists\,E_a, E_b$ s.t. $E_a \circ E_b \neq E_b \circ E_a$ | ★ 最高 |
+| 1.5 | **群でないこと（逆元の不在）** | 不可逆介入に対し $E \circ E^{-1} = \mathrm{id}$ を満たす $E^{-1}$ は存在しない | ★ 最高 |
+
+```lean
+-- Lean 4 マイルストーン（この順序で実装）
+instance : Monoid MedicalIntervention := { ... }       -- 1.1〜1.3
+theorem noncomm_exists :
+  ∃ a b : MedicalIntervention, a * b ≠ b * a := ...   -- 1.4
+theorem no_inverse :
+  ∃ a : MedicalIntervention, ¬∃ b, a * b = 1 := ...   -- 1.5
+```
+
+---
+
+### Layer 2：MEDICUS 最小空間（Banach 空間）
+
+| # | 命題 | 内容 | 優先度 |
+|---|---|---|---|
+| 2.1 | **ノルム公理（正定値性）** | $\|f\|_{\mathcal{M}_0} = 0 \Rightarrow f \equiv 0$ | ★ 最高 |
+| 2.2 | **ノルム公理（斉次性）** | $\|\lambda f\|_{\mathcal{M}_0} = \|\lambda\|\|f\|_{\mathcal{M}_0}$ | ★ 最高 |
+| 2.3 | **ノルム公理（三角不等式）** | $\|f+g\|_{\mathcal{M}_0} \leq \|f\|_{\mathcal{M}_0} + \|g\|_{\mathcal{M}_0}$ | ★ 最高 |
+| 2.4 | **完備性（Banach 空間）** | Cauchy 列が $\mathcal{M}_0$ 内に収束する | ★ 最高 |
+
+```lean
+theorem medicus_norm_is_norm : IsNorm (medicusNorm) := ...    -- 2.1〜2.3
+theorem medicus_space_is_banach : IsBanachSpace MedicusMin := ... -- 2.4
+```
+
+---
+
+### Layer 3：Mollifier と C∞ 近似
+
+| # | 命題 | 内容 | 優先度 |
+|---|---|---|---|
+| 3.1 | **Mollifier の C∞ 性** | $f_\varepsilon = f * \phi_\varepsilon \in C^\infty$ | ★ 最高 |
+| 3.2 | **収束性** | $\|f_\varepsilon - f\|_{\mathcal{M}_0} \to 0$（$\varepsilon \to 0$） | ★ 最高 |
+| 3.3 | **フレシェ微分可能性** | $f_\varepsilon$ はフレシェ微分可能であり連鎖律が成立する | ★ 最高 |
+
+```lean
+-- Mathlib の BumpFunction 定理を活用
+theorem mollifier_smooth : ∀ ε > 0, Smooth (mollify f ε) := ...  -- 3.1
+theorem mollifier_converges : Tendsto (mollify f) (𝓝 0) (𝓝 f) := ... -- 3.2
+```
+
+> **注：** 3.1・3.2 は Friedrichs (1944) の既知結果であり、
+> Lean 4 では Mathlib の `Mathlib.Analysis.Calculus.BumpFunction` を流用できる。
+> 3.3 は $C^\infty$ から直接従う系（corollary）として処理可能。
+
+---
+
+## 証明が不要なもの（理由付き）
+
+| 項目 | 不要な理由 |
+|---|---|
+| セキュリティ×効率の不確定性（旧 §3） | 演算子 $\hat{S}, \hat{E}$ の定義が未確定。論文スコープ外に切り離した |
+| Shannon エントロピーのノルム性 | 凹関数で三角不等式を満たさない。目的関数 $J(\theta)$ に移動済み |
+| ヘッセ行列の正定値性 | 最適化の収束条件だが論文の主張（空間の定義）には不要。将来課題 |
+| Protobuf スキーマ整合性 | API 実装は論文化の後で検討。現段階では過剰 |
+| Green の関係による同値類 | 将来の拡張（report_v4_extended.md に記載）。本論文には不要 |
+| 最適輸送・変分法の弱解 | 同上。拡張論文候補 |
+
+---
+
+## Haskell による数値検証（補助的・Appendix 不要）
+
+Lean 4 での形式証明の補助として、数値シミュレーションで「それらしい」ことを確認する。
+論文には載せないが、開発中の健全性チェックとして使う。
+
+| # | 内容 | スクリプト |
+|---|---|---|
+| H.1 | $E_\mathrm{chemo} \circ E_\mathrm{radio} \neq E_\mathrm{radio} \circ E_\mathrm{chemo}$ の数値確認 | `visualization/noncommutativity.py` で既に実施済み |
+| H.2 | $\varepsilon \to 0$ での $\|f_\varepsilon - f\|_\infty$ の収束確認 | `visualization/mollifier.py` で既に実施済み |
+| H.3 | ノルム三角不等式のランダムテスト | 未実装（必要になれば追加） |
+
+---
+
+## 実施順序
+
+```
+Step 1 ── Lean 4: 1.1〜1.5（モノイド＋逆元不在）
+              ↓ ここまでで Layer 1 完了
+Step 2 ── Lean 4: 2.1〜2.4（Banach 空間）
+              ↓ ここまでで Layer 2 完了
+Step 3 ── Lean 4: 3.1〜3.3（Mollifier、Mathlib 流用）
+              ↓ Appendix A が揃う
+Step 4 ── arXiv math.FA にプレプリント投稿
+              ↓
+Step 5 ── 査読コメントを受けて必要な箇所のみ深める
+```
+
+Step 1 の `noncomm_exists` だけでも完成していれば「部分的に形式検証済み」として投稿可能。
