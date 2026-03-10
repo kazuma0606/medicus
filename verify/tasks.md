@@ -73,33 +73,33 @@
 
 ## 3. Layer 2：Banach 空間の証明
 
-- [ ] 3.1 MEDICUS 最小空間の型定義
+- [x] 3.1 MEDICUS 最小空間の型定義
   - `variable (Ω : Set (Fin n → ℝ)) [BoundedSpace Ω]` を定義
   - `MedicusMin Ω := {f : Ω → ℝ | Differentiable ℝ f}` を部分型として定義
   - `Subtype` か `Structure` かを選択（PROOF_SPEC §5 の未解決事項）
   - _仕様: PROOF_SPEC §2.0_
 
-- [ ] 3.2 MEDICUS ノルムの定義
+- [x] 3.2 MEDICUS ノルムの定義
   - `medicusNorm f := ‖f‖_∞ + ‖fderiv ℝ f ·‖_∞` を定義
   - `fderiv` と `‖·‖∞` の Mathlib 上の型を整合させる
   - _仕様: PROOF_SPEC §2.1_
 
-- [ ] 3.3 ノルム公理の証明（正定値性・斉次性・三角不等式）
+- [x] 3.3 ノルム公理の証明（正定値性・斉次性・三角不等式）
   - `lemma medicus_pos_def` — `‖f‖∞ = 0 → f ≡ 0` から導出
   - `lemma medicus_smul` — `norm_smul` を流用
   - `lemma medicus_triangle` — `norm_add_le` + 勾配の線形性を利用
   - _仕様: PROOF_SPEC §2.1〜2.3_
 
-- [ ] 3.4 Banach 空間（完備性）の証明
-  - `theorem medicus_complete : CompleteSpace (MedicusMin Ω)`
-  - Step 1：$C(\bar\Omega)$ の完備性（`ContinuousMap.completeSpace`）
-  - Step 2：勾配列の Cauchy 性
-  - Step 3：`hasFDerivAt_of_tendsto_uniformly` で微分と極限の交換
-  - ⚠️ **最難関**：Step 3 の適用条件の整合が要確認
+- [x] 3.4 Banach 空間（完備性）の証明
+  - `theorem medicusMin_complete` を実装・証明（sorry ゼロ）
+  - Step A：`cauchySeq_tendsto_of_complete` で点ごとの極限を取得
+  - Step B：`Metric.tendstoUniformly_iff` + ε/2 戦略で一様収束を確認
+  - Step C：`hasDerivAt_of_tendstoUniformly` で微分と極限の交換
+  - Step D：上界の証明（一様収束 + ε/3 戦略）
   - _仕様: PROOF_SPEC §2.4_
 
-- [ ] 3.5 チェックポイント：Layer 2 の確認
-  - `#check medicus_complete` が通ることを確認
+- [x] 3.5 チェックポイント：Layer 2 の確認
+  - `lake build MedicusVerify.Layer2Banach` がエラーゼロで通ることを確認
   - ノルム公理 3 つ + 完備性がすべてコンパイルされることを確認
   - **Appendix A.2 として追加**
 

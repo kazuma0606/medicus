@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(~/.elan/bin/lake build:*)",
+      "Bash(lake build:*)"
     ]
   }
 }
