@@ -113,12 +113,14 @@
   - 注: `ContDiff ℝ ⊤` は解析的レベル（強すぎ）；C∞ は `ContDiff ℝ (⊤ : ℕ∞)` と型注釈が必要
   - _仕様: PROOF_SPEC §3.1_
 
-- [~] 4.2 収束性の証明（部分証明）
-  - `theorem mollifier_pointwise_converges` — 点ごと収束を証明済み
+- [x] 4.2 収束性の証明
+  - `theorem mollifier_pointwise_converges` — 点ごと収束（sorry ゼロ）
     - `ContDiffBump.convolution_tendsto_right_of_continuous` を流用
-  - `theorem mollifier_converges` — M_0 ノルム収束 (sorry; 証明戦略をコメントに記載)
-    - `‖f_ε - f‖∞` : Lipschitz → 一様連続 → 一様収束（形式化に追加補題が必要）
-    - `‖∇f_ε - ∇f‖∞` : 微分と畳み込みの交換 + 同様の議論
+  - `theorem mollifier_converges` — M_0 ノルム収束（sorry ゼロ）
+    - 仮定: `LipschitzWith Kdf (deriv f)` (W^{2,∞} 正則性)
+    - 第 1 項: f が Lipschitz（有界な微分 + MVT）→ `dist_normed_convolution_le` で上界
+    - 第 2 項: (φ_n ⋆ deriv f) として定式化し部分積分を回避；同様の Lipschitz 上界
+    - `squeeze_zero` + `Filter.Tendsto.add` で証明完結
   - _仕様: PROOF_SPEC §3.2_
 
 - [x] 4.3 フレシェ微分可能性（系）
